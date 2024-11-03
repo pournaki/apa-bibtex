@@ -1,0 +1,104 @@
+%% ========== APA BIBTEX BIBLIOGRAPHY STYLE =============================
+%% -------------------------------------------------------------
+%% Author: Armin Pournaki
+%% Last modified: 2024-11-03
+   
+%% The rationale behind the following section is to get to a
+%% reasonably fast APA-like citation style. That means avoiding
+%% biber at all cost, and having to tweak settings manually to
+%% get as close to APA as possible.
+
+%% Features of this style:
+%% - Compliance with APA 7th Ed. (yet have to find divergences)
+%% - Support for translations. Just add the original date in the
+%%   'note' field of the bib-entry and an 'addendum' field saying
+%%   'Original work published in {oyear}'. The inline citation will
+%%   be Author (oyear/year) and the bibliography entry will have
+%%   "(Original work published oyear)" at the end.
+%% -------------------------------------------------------------      
+   
+%% legacy natbib code, very hard to customize...   
+\usepackage[style=authoryear-comp,
+            natbib=true,
+            backend=bibtex,
+            giveninits=true,
+            maxcitenames=2,
+            maxbibnames=99,
+            ]{biblatex}
+\addbibresource{bibliography.bib}
+
+% ----------- original year of translated works ------------------
+% add the original year if it's in the note field
+\renewbibmacro*{cite:labeldate+extradate}{%
+  \printtext[bibhyperref]{%
+    \iffieldundef{note}
+      {\printfield{year}\printfield{extradate}} % If no original year, just print the year
+      {\printfield{note}% Prints origyear (from note)
+       \addslash
+       \printfield{year}\printfield{extradate}}}}       
+% insert "Original work published in {note}" at the end of each bibliography entry if note 
+\renewbibmacro*{finentry}{%
+  \finentry
+  \iffieldundef{note}
+    {}% Do nothing if note is not defined
+    {\newunit\newblock{ (Original work published \printfield{note})}}% Print note at the end
+  }
+% ----------------------------------------------------------------  
+
+% remove undesired fields
+\AtEveryBibitem{%
+    \clearfield{month} % APA generally omits month of publication
+    \clearfield{day}   % APA generally omits day of publication
+    \clearfield{url}
+    \clearfield{isbn}
+    \clearfield{issn}
+    \clearfield{note}
+    \clearfield{urldate}
+    \clearfield{address}
+    \clearfield{editor}
+    \clearlist{language} % Omit language field
+}
+
+% remove urldate
+\AtBeginBibliography{%
+  \renewbibmacro*{urldate}{} % This removes the "visited on" date display
+}
+
+% tweak formatting to resemble APA style
+\DeclareFieldFormat{addendum}{\mkbibparens{#1}\nopunct}
+\DeclareFieldFormat{edition}{\mkbibparens{#1}}
+\DeclareFieldFormat[inbook]{title}{#1} % Redefine the title format for inbook
+\DeclareFieldFormat[article]{title}{#1} % Italicize only journal title
+\DeclareFieldFormat[book]{title}{\mkbibemph{#1}} % Italicize book titles
+\DeclareFieldFormat[book]{volume}{(Vol. #1)} % Set Vol. properly
+\DeclareFieldFormat{journaltitle}{\mkbibemph{#1}} % Remove quotation marks from journal titles
+\DeclareFieldFormat[inproceedings]{title}{#1} % Don't italicize titles of conference papers
+\DeclareFieldFormat[book]{edition}{(#1). } % Period after book edition.
+\DeclareFieldFormat{pages}{#1} % no pp in page definition
+\renewbibmacro*{title}{%
+  \printfield{title}%
+  \iffieldundef{edition}{}{\setunit{\addspace}\nopunct}%
+}
+
+% remove "In:" for articles, print "In " for conf. articles
+\renewbibmacro{in:}{}
+\renewbibmacro*{in:}{%
+  \ifboolexpr{
+    test {\ifentrytype{inproceedings}} % Check if the entry type is 'inproceedings'
+  }
+  {\bibstring{in}\intitlepunct}  % If true, print "In "
+  {}            % If false, print nothing
+}
+\renewcommand*{\intitlepunct}{\nopunct}
+
+% define volume/number format for journals
+\renewbibmacro*{volume+number+eid}{
+  \addcomma
+  \textit{\printfield{volume}}%
+  \iffieldundef{number}
+    {}
+    {\mkbibparens{\printfield{number}}}%
+  \setunit{\addcomma\space}%
+  \printfield{eid}
+}
+% =======================================================
